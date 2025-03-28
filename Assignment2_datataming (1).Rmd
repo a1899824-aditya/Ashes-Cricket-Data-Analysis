@@ -1,0 +1,151 @@
+---
+title: "Assignment_2_DT"
+author: "aditya venugopalan a1899824"
+date: "2023-10-03"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+# First we will load neccessary library files as well as the csv file
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(inspectdf)
+library(stringr)
+library(readr)
+library(forcats)
+library(ggthemes)
+tinytex::install_tinytex( force = TRUE)
+ashes <- read.csv("ashes_2007.csv")
+ashes
+```
+```{r}
+ashes_tidy<-gather(ashes, key="test_innings", value="details", 5:14)
+  ashes_tidy <- tibble(ashes_tidy)
+  ashes_tidy
+```
+```{r}
+#using str_match()
+head(ashes_tidy)
+ashes_tidy <- ashes_tidy %>%
+mutate(batting_order=str_match(details, "Batting at number (\\d+), scored")[,2], score=str_match(details, "scored (\\d+) runs")[,2],balls=str_match(details, "from (\\d+) balls")[,2])
+ashes_tidy
+
+head(ashes_tidy)
+```
+```{r}
+#question 1(b)
+ashes_tidy$batting_order <- as.integer(ashes_tidy$batting_order)
+ashes_tidy$score <- as.integer(ashes_tidy$score)
+ashes_tidy$balls <- as.integer(ashes_tidy$balls)
+ashes_tidy$role <- as_factor(ashes_tidy$role)
+ashes_tidy$team <- as_factor(ashes_tidy$team)
+ashes_tidy
+head(ashes_tidy)
+```
+```{r}
+#1c
+ashes_tidy$role <- ashes_tidy$role %>%
+fct_recode(
+all_rounder="all rounder",
+bowler="bolw",
+bowler="bowl",
+batsman="batter",
+batsman="bat")
+ashes_tidy
+
+```
+```{r}
+#2a
+ggplot(data=ashes_tidy, aes(x=score))+
+geom_histogram(binwidth = 10)+ labs(title = "Histogram of  runs scored in  the series", x = "Scores", y = "Frequency")
+
+```
+#Q 2b
+shape:unimodal,right-skewed
+outliers:- between 190-220
+spread :- range lies between 0 to 220
+location:- The peak is between 0 to 10
+```{r}
+#Q2 c
+sum_players <- ashes_tidy %>%
+  distinct(batter,team) %>%
+  group_by(team) %>%
+  summarise(players=n())
+
+sum_players
+
+ggplot(sum_players,aes(x=team,y=players, fill = team)) +
+geom_bar(stat="identity") +
+labs(title = "Bar Chart representing different Teams Participating in the Series", x =  "Teams", y = "No. of Players")
+```
+```{r}
+#Q3 a
+ggplot(ashes_tidy, aes(x = score, fill = team)) +
+geom_histogram(position = "identity",binwidth = 10) +
+labs(title = "Histogram of Runs Scored in the Ashes Series (by Team Faceted)",
+x = "Score",
+y = "Frequency") +
+facet_wrap(~team)
+```
+```{r}
+# Q3 b
+ggplot(ashes_tidy, aes(x = team, y = score, fill = team)) +
+geom_boxplot() +
+labs(title = "Boxplots of Runs Scored during the Ashes Series by team",
+x = "Team",
+y = "Score")
+```
+Shape: The distribution of scores in Australia seems to be right - skewed . The amount of low scores are more as compared to less high scores. In the case of box plot , the box is slightly right-skewed distribution. Now talking about England , the distribution for England is also same as Australia , that is right skewed.
+Location:- Australia distribution according to the histogram and boxplot is around 20 to 30 runs
+Location :- Once again same conclusion can be made , that is the center of the distribution for England is also around 20 to 30 runs
+Spread: Australia distribution has a wider spread as shown in histogram , displaying a high range of scores spread across. England on the other hand also have a wide spread , which is evident by observing both of the plots. This means just like Australia , England too has variety of scores.
+Outliers:  Both Australia and England are displaying outliers in high scores which can be seen when referring the box plots .
+Conclusion :- According to my Analysis , what i have discovered is that both teams have very much similar variability in scores , but England seems to have a bit lower variability then Australia. Another conclusion that i was able to make was both the teams have a right-skewed distribution accompanied by wide spread of sources and outliers.
+```{r}
+# Q 4A
+ggplot(ashes_tidy, aes(x = balls, y = score, color = team)) +
+geom_point() +
+labs(title = "Scatterplot of Runs Scored vs Number of Balls Faced",
+x = "Number of Balls Faced",
+y = "Score")
+```
+Q4 B
+The conclusions that can be made after observing the scatterplot is , a positive relationship can be seen between score and  the number of balls the batsman faced.
+second conclusion that i was able to identify was , if we ignore few outliers in the case of Australia , it is highly possible for the players had faced more balls in order to score more runs
+```{r}
+ashes_tidy <- ashes_tidy %>%
+mutate(scoring_rate = score / balls)
+ggplot(ashes_tidy, aes(x = balls, y = scoring_rate)) +
+geom_point() +
+labs(title = "Scatterplot of Scoring Rate VS The number  of Balls Faced",
+x = "Number of Balls Faced",
+y = "Scoring Rate")
+```
+#Q4 d
+The scatterplot shown above shows us a mixed relationship between the scoring rate on y-axis and the number of balls faced by the batsman on the x-axis. 
+If observed seriously, we can also observe there is no clear trend and the players who were facing more balls are not scoring more runs quickly and the players who are facing less balls aren't scoring slowly .
+```{r}
+player_details <- ashes_tidy %>%
+distinct(batter, team, role) %>%
+group_by(team, role) %>%
+summarise(players= n())
+ggplot(player_details, aes(x = team, y = players, fill = role)) +
+geom_bar(stat = "identity") +
+labs(title = "The number  of Players per Team by their role",
+x = "Team",
+y = "No of Players")
+```
+```{r}
+contingency_table <- ashes_tidy$role %>%
+table(ashes_tidy$team) %>%
+prop.table()
+contingency_table
+```
+With the help of the above figure, It is very obvious that Australia mainly consist of batsman , but when it comes to all rounder , both the teams share equal proportions.
+
+
